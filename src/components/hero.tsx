@@ -26,7 +26,7 @@ export function Hero() {
           </p>
         </div>
       </div>
-      <div className="hero-scroll">
+      <div className="hero-scroll pt-4">
         <div className="scroll-line" />
         <span className="label">Scroll</span>
       </div>
