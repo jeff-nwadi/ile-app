@@ -3,74 +3,43 @@ import { AdireStrip } from "@/components/adire-strip";
 import { Hero } from "@/components/hero";
 import { LandingEffects } from "@/components/landing-effects";
 import { Navbar } from "@/components/navbar";
+import { formatNaira } from "@/lib/utils";
+import { db } from "@/db";
+import { menuItem as menuItemTable, menuCategory } from "@/db/schema";
+import { eq, asc } from "drizzle-orm";
 
-const menuItems = [
-  {
-    num: "01",
-    name: "Ekpang in a Glass",
-    desc: "Cocoyam and waterleaf, clarified into a warm broth, smoked periwinkle",
-    price: "₦14,000",
-  },
-  {
-    num: "02",
-    name: "Suya Tartare",
-    desc: "Hand-cut dry-aged beef, yaji spice ash, pickled ata rodo, quail yolk",
-    price: "₦18,500",
-  },
-  {
-    num: "03",
-    name: "Ofada Risotto",
-    desc: "Local rice slow-cooked in ayamase reduction, bell pepper oil, ata din-din crisp",
-    price: "₦16,000",
-  },
-  {
-    num: "04",
-    name: "Catch of Lekki",
-    desc: "Grilled croaker, banga sauce, charred plantain purée, palm-oil emulsion",
-    price: "₦24,000",
-  },
-  {
-    num: "05",
-    name: "Asun-Lacquered Lamb",
-    desc: "Slow lamb shoulder, pepper-soup jus, fonio crumble, scent leaf oil",
-    price: "₦27,000",
-  },
-  {
-    num: "06",
-    name: "Zobo & Citrus",
-    desc: "Hibiscus granita, blood orange, ginger crumble — a palate reset",
-    price: "₦8,000",
-  },
-  {
-    num: "07",
-    name: "Chin Chin Mille-Feuille",
-    desc: "Layered pastry, tigernut custard, caramelised plantain, nutmeg",
-    price: "₦11,500",
-  },
-];
+async function getMenuItems() {
+  try {
+    const items = await db
+      .select()
+      .from(menuItemTable)
+      .where(eq(menuItemTable.available, true))
+      .orderBy(asc(menuItemTable.sortOrder));
+    console.log("Menu items from DB:", items.length, "items");
+    return items;
+  } catch (error) {
+    console.error("Menu DB error:", error);
+    return [];
+  }
+}
 
-const galleryItems = [
-  {
-    caption: "The Open Kitchen",
-    speed: "0.15",
-    image:
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    caption: "Courtyard Table",
-    speed: "0.25",
-    image:
-      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    caption: "Evening Service",
-    speed: "0.1",
-    image:
-      "https://images.unsplash.com/photo-1428515613728-6b4607e44363?auto=format&fit=crop&w=900&q=80",
-  },
-];
+async function getGalleryItems() {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || ""}/api/gallery`,
+    );
+    if (!res.ok) throw new Error("Failed to fetch gallery");
+    const data = await res.json();
+    return data.items || [];
+  } catch (error) {
+    console.error("Gallery fetch error:", error);
+    return [];
+  }
+}
 
-export default function Home() {
+export default async function Home() {
+  const menuItems = await getMenuItems();
+  const galleryItems = await getGalleryItems();
   return (
     <>
       <LandingEffects />
@@ -89,13 +58,13 @@ export default function Home() {
             <p>
               Ilé began as a single table in a Lagos courtyard. Today it&apos;s
               twelve, but the rule hasn&apos;t changed: every dish traces back
-              to a market stall, a grandmother&apos;s pot, or a roadside grill
-              — rebuilt, not reinvented.
+              to a market stall, a grandmother&apos;s pot, or a roadside grill —
+              rebuilt, not reinvented.
             </p>
             <p>
-              Our kitchen works in seven-day cycles with growers in Epe,
-              Badagry and the Niger Delta, so the tasting menu changes with
-              what the land sends us, not the other way round.
+              Our kitchen works in seven-day cycles with growers in Epe, Badagry
+              and the Niger Delta, so the tasting menu changes with what the
+              land sends us, not the other way round.
             </p>
           </div>
           <div className="phi-img-wrap reveal">
@@ -124,21 +93,27 @@ export default function Home() {
             </h2>
           </div>
           <p>
-            Served nightly from 7pm. Wine pairing available on request,
-            curated by our sommelier from West African and Cape vineyards.
+            Served nightly from 7pm. Wine pairing available on request, curated
+            by our sommelier from West African and Cape vineyards.
           </p>
         </div>
         <div className="menu-list">
-          {menuItems.map((item) => (
-            <div key={item.num} className="menu-item reveal">
-              <span className="mi-num">{item.num}</span>
-              <span className="mi-name">
-                {item.name}
-                <span className="mi-desc">{item.desc}</span>
-              </span>
-              <span className="mi-price">{item.price}</span>
-            </div>
-          ))}
+          {menuItems && menuItems.length > 0 ? (
+            menuItems.map((item, index) => (
+              <div key={item.id} className="menu-item reveal">
+                <span className="mi-num">{String(index + 1).padStart(2, '0')}</span>
+                <span className="mi-name">
+                  {item.name}
+                  <span className="mi-desc">{item.description}</span>
+                </span>
+                <span className="mi-price">{formatNaira(item.priceKobo)}</span>
+              </div>
+            ))
+          ) : (
+            <p style={{ opacity: 0.6, textAlign: 'center', padding: '2rem' }}>
+              No menu items available. Add items from the admin dashboard.
+            </p>
+          )}
         </div>
       </section>
 
@@ -149,17 +124,17 @@ export default function Home() {
             <h2>The Room.</h2>
           </div>
           <p>
-            Twelve seats, one open kitchen, and a courtyard that still
-            remembers it used to be someone&apos;s home.
+            Twelve seats, one open kitchen, and a courtyard that still remembers
+            it used to be someone&apos;s home.
           </p>
         </div>
         <div className="gal-row">
           {galleryItems.map((item) => (
-            <div key={item.caption} className="gal-card reveal">
+            <div key={item.id} className="gal-card reveal">
               <div
                 className="gal-img"
                 data-speed={item.speed}
-                style={{ backgroundImage: `url('${item.image}')` }}
+                style={{ backgroundImage: `url('${item.imageUrl}')` }}
               />
               <div className="gal-cap">{item.caption}</div>
             </div>

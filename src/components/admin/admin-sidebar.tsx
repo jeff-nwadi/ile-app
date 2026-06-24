@@ -8,6 +8,7 @@ import {
   LogOut,
   ShoppingBag,
   UtensilsCrossed,
+  Image,
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,6 +32,7 @@ export type AdminSidebarProps = {
 const nav = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/menu", label: "Menu", icon: UtensilsCrossed },
+  { href: "/admin/gallery", label: "Gallery", icon: Image },
   { href: "/admin/reservations", label: "Reservations", icon: CalendarDays },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
 ];

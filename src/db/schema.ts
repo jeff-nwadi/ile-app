@@ -139,3 +139,12 @@ export const reservation = pgTable("reservation", {
   specialRequests: text("special_requests"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const gallery = pgTable("gallery", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  caption: text("caption").notNull(),
+  imageUrl: text("image_url").notNull(),
+  speed: text("speed").notNull().default("0.15"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});

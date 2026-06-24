@@ -26,7 +26,11 @@ const createSchema = z.object({
   name: z.string().min(1),
   description: z.string().default(""),
   priceKobo: z.number().int().positive(),
-  imageUrl: z.string().url().nullable().optional(),
+  imageUrl: z
+    .string()
+    .refine((val) => val.startsWith("/") || val.startsWith("http"))
+    .nullable()
+    .optional(),
   sortOrder: z.number().int().default(0),
 });
 
@@ -37,7 +41,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const [created] = await db.insert(menuItem).values(parsed.data).returning();

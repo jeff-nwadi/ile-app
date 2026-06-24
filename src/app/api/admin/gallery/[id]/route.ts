@@ -1,21 +1,17 @@
 import { db } from "@/db";
-import { menuItem } from "@/db/schema";
+import { gallery } from "@/db/schema";
 import { requireAdmin } from "@/lib/session";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const updateSchema = z.object({
-  categoryId: z.string().uuid().nullable().optional(),
-  name: z.string().min(1).optional(),
-  description: z.string().optional(),
-  priceKobo: z.number().int().positive().optional(),
+  caption: z.string().min(1).optional(),
   imageUrl: z
     .string()
     .refine((val) => val.startsWith("/") || val.startsWith("http"))
-    .nullable()
     .optional(),
-  available: z.boolean().optional(),
+  speed: z.string().optional(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -36,9 +32,9 @@ export async function PATCH(
   }
 
   const [updated] = await db
-    .update(menuItem)
-    .set({ ...parsed.data, updatedAt: new Date() })
-    .where(eq(menuItem.id, id))
+    .update(gallery)
+    .set(parsed.data)
+    .where(eq(gallery.id, id))
     .returning();
 
   if (!updated)
@@ -53,6 +49,6 @@ export async function DELETE(
   await requireAdmin();
   const { id } = await params;
 
-  await db.delete(menuItem).where(eq(menuItem.id, id));
+  await db.delete(gallery).where(eq(gallery.id, id));
   return NextResponse.json({ ok: true });
 }
