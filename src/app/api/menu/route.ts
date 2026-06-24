@@ -1,6 +1,9 @@
 import { db } from "@/db";
 import { menuItem, menuCategory } from "@/db/schema";
-import { requireAdmin } from "@/lib/session";
+import { mustAdmin } from "@/lib/session";
+import { audit } from "@/lib/audit";
+import { isAllowedImageUrl } from "@/lib/cdn";
+import { safeError } from "@/lib/errors";
 import { asc, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -23,30 +26,42 @@ export async function GET() {
 
 const createSchema = z.object({
   categoryId: z.string().uuid().nullable().optional(),
-  name: z.string().min(1),
-  description: z.string().default(""),
-  priceKobo: z.number().int().positive(),
+  name: z.string().min(1).max(120),
+  description: z.string().max(2000).default(""),
+  priceKobo: z.number().int().positive().max(100_000_000),
   imageUrl: z
     .string()
-    .refine((val) => val.startsWith("/") || val.startsWith("http"))
+    .refine(isAllowedImageUrl, "Image URL must be HTTPS or /uploads/")
     .nullable()
     .optional(),
-  sortOrder: z.number().int().default(0),
+  sortOrder: z.number().int().min(0).max(100_000).default(0),
 });
 
 // POST /api/menu — admin only, create a menu item
 export async function POST(req: NextRequest) {
-  await requireAdmin();
+  const user = await mustAdmin();
 
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return safeError(400, "Invalid JSON");
+  }
+
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return safeError(400, "Invalid request", parsed.error.flatten());
   }
 
   const [created] = await db.insert(menuItem).values(parsed.data).returning();
+
+  await audit({
+    userId: user.id,
+    action: "menu.create",
+    targetType: "menu_item",
+    targetId: created.id,
+    meta: { name: created.name },
+  });
+
   return NextResponse.json({ item: created }, { status: 201 });
 }

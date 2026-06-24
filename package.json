@@ -10,10 +10,10 @@
     "db:generate": "npx drizzle-kit generate",
     "db:push": "npx drizzle-kit push",
     "db:studio": "npx drizzle-kit studio",
-    "promote": "npx tsx promote.ts",
     "db:seed": "npx tsx scripts/seed.ts"
   },
   "dependencies": {
+    "@arcjet/next": "^1.5.0",
     "@floating-ui/react": "^0.27.19",
     "@neondatabase/serverless": "^1.1.0",
     "@paystack/inline-js": "^2.23.1",

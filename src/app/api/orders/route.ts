@@ -1,8 +1,11 @@
+import "server-only";
 import { db } from "@/db";
 import { menuItem, order, orderItem } from "@/db/schema";
 import { paystackInitialize } from "@/lib/paystack";
 import { getCurrentUser } from "@/lib/session";
 import { isAdmin } from "@/lib/roles";
+import { protect, isDenied } from "@/lib/arcjet";
+import { safeError } from "@/lib/errors";
 import { inArray, desc, eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
@@ -12,7 +15,7 @@ import { z } from "zod";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return safeError(401, "Unauthorized");
   }
   const rows = isAdmin(user)
     ? await db.select().from(order).orderBy(desc(order.createdAt))
@@ -25,26 +28,42 @@ export async function GET() {
 }
 
 const cartSchema = z.object({
-  customerName: z.string().min(1),
-  customerEmail: z.string().email(),
-  customerPhone: z.string().min(7),
-  notes: z.string().optional(),
+  customerName: z.string().min(1).max(120),
+  customerEmail: z.string().email().max(254),
+  customerPhone: z.string().min(7).max(32),
+  notes: z.string().max(2000).optional(),
   items: z
     .array(
       z.object({
         menuItemId: z.string().uuid(),
         quantity: z.number().int().min(1).max(20),
-      })
+      }),
     )
-    .min(1),
+    .min(1)
+    .max(50),
 });
 
 // POST /api/orders — create order (pending_payment) + Paystack checkout link
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  try {
+    const decision = await protect(req, "order");
+    if (isDenied(decision)) {
+      return safeError(429, "Too many requests. Try again later.");
+    }
+  } catch {
+    // Fail open on Arcjet errors.
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return safeError(400, "Invalid JSON");
+  }
+
   const parsed = cartSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return safeError(400, "Invalid request", parsed.error.flatten());
   }
   const { customerName, customerEmail, customerPhone, notes, items } = parsed.data;
 
@@ -56,10 +75,7 @@ export async function POST(req: NextRequest) {
   for (const i of items) {
     const found = itemMap.get(i.menuItemId);
     if (!found || !found.available) {
-      return NextResponse.json(
-        { error: `Item unavailable: ${i.menuItemId}` },
-        { status: 400 }
-      );
+      return safeError(400, `Item unavailable: ${i.menuItemId}`);
     }
   }
 
@@ -95,7 +111,7 @@ export async function POST(req: NextRequest) {
         priceKoboSnapshot: found.priceKobo,
         quantity: i.quantity,
       };
-    })
+    }),
   );
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -112,6 +128,6 @@ export async function POST(req: NextRequest) {
       order: createdOrder,
       checkoutUrl: paystackRes.data.authorization_url,
     },
-    { status: 201 }
+    { status: 201 },
   );
 }

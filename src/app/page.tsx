@@ -23,14 +23,21 @@ async function getMenuItems() {
   }
 }
 
-async function getGalleryItems() {
+interface GalleryItem {
+  id: string;
+  imageUrl: string;
+  caption: string;
+  speed?: number;
+}
+
+async function getGalleryItems(): Promise<GalleryItem[]> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL || ""}/api/gallery`,
     );
     if (!res.ok) throw new Error("Failed to fetch gallery");
     const data = await res.json();
-    return data.items || [];
+    return (data.items || []) as GalleryItem[];
   } catch (error) {
     console.error("Gallery fetch error:", error);
     return [];

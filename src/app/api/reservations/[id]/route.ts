@@ -1,6 +1,9 @@
+import "server-only";
 import { db } from "@/db";
 import { reservation } from "@/db/schema";
-import { requireAdmin } from "@/lib/session";
+import { mustAdmin } from "@/lib/session";
+import { audit } from "@/lib/audit";
+import { safeError } from "@/lib/errors";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -11,15 +14,21 @@ const updateSchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  await requireAdmin();
+  const user = await mustAdmin();
   const { id } = await params;
 
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return safeError(400, "Invalid JSON");
+  }
+
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return safeError(400, "Invalid request", parsed.error.flatten());
   }
 
   const [updated] = await db
@@ -28,9 +37,15 @@ export async function PATCH(
     .where(eq(reservation.id, id))
     .returning();
 
-  if (!updated) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  if (!updated) return safeError(404, "Not found");
+
+  await audit({
+    userId: user.id,
+    action: "reservation.status",
+    targetType: "reservation",
+    targetId: id,
+    meta: { to: parsed.data.status },
+  });
 
   return NextResponse.json({ reservation: updated });
 }

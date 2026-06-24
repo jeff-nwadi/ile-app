@@ -15,11 +15,6 @@ function ClientAuthForm() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/";
 
-  // Pull `refetch` off the session atom so we can force the navbar (and any
-  // other subscriber) to re-validate after sign-in / sign-up. The session
-  // atom's internal cache isn't always invalidated automatically by
-  // signIn.email / signUp.email in better-auth 1.6.20, so we trigger it
-  // explicitly to keep the UI in sync.
   const { refetch: refetchSession } = useSession();
 
   const [mode, setMode] = useState<"in" | "up">("in");

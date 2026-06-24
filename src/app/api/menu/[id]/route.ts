@@ -1,38 +1,44 @@
 import { db } from "@/db";
 import { menuItem } from "@/db/schema";
-import { requireAdmin } from "@/lib/session";
+import { mustAdmin } from "@/lib/session";
+import { audit } from "@/lib/audit";
+import { isAllowedImageUrl } from "@/lib/cdn";
+import { safeError } from "@/lib/errors";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const updateSchema = z.object({
   categoryId: z.string().uuid().nullable().optional(),
-  name: z.string().min(1).optional(),
-  description: z.string().optional(),
-  priceKobo: z.number().int().positive().optional(),
+  name: z.string().min(1).max(120).optional(),
+  description: z.string().max(2000).optional(),
+  priceKobo: z.number().int().positive().max(100_000_000).optional(),
   imageUrl: z
     .string()
-    .refine((val) => val.startsWith("/") || val.startsWith("http"))
+    .refine(isAllowedImageUrl, "Image URL must be HTTPS or /uploads/")
     .nullable()
     .optional(),
   available: z.boolean().optional(),
-  sortOrder: z.number().int().optional(),
+  sortOrder: z.number().int().min(0).max(100_000).optional(),
 });
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  await requireAdmin();
+  const user = await mustAdmin();
   const { id } = await params;
 
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return safeError(400, "Invalid JSON");
+  }
+
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return safeError(400, "Invalid request", parsed.error.flatten());
   }
 
   const [updated] = await db
@@ -41,8 +47,16 @@ export async function PATCH(
     .where(eq(menuItem.id, id))
     .returning();
 
-  if (!updated)
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!updated) return safeError(404, "Not found");
+
+  await audit({
+    userId: user.id,
+    action: "menu.update",
+    targetType: "menu_item",
+    targetId: id,
+    meta: { changed: Object.keys(parsed.data) },
+  });
+
   return NextResponse.json({ item: updated });
 }
 
@@ -50,9 +64,17 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  await requireAdmin();
+  const user = await mustAdmin();
   const { id } = await params;
 
   await db.delete(menuItem).where(eq(menuItem.id, id));
+
+  await audit({
+    userId: user.id,
+    action: "menu.delete",
+    targetType: "menu_item",
+    targetId: id,
+  });
+
   return NextResponse.json({ ok: true });
 }

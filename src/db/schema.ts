@@ -6,6 +6,7 @@ import {
   boolean,
   uuid,
   pgEnum,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 /* ---------------- Better Auth tables ---------------- */
@@ -148,3 +149,41 @@ export const gallery = pgTable("gallery", {
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+/* ---------------- Security tables ---------------- */
+
+// Append-only audit trail for privileged actions (admin mutations,
+// auth events, webhook deliveries). Reads allowed for admins; writes
+// are made by the app role only.
+export const auditLog = pgTable("audit_log", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+  action: text("action").notNull(), // e.g. "menu.create", "order.status", "auth.signin"
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id"),
+  meta: text("meta"), // JSON-stringified
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Webhook idempotency. The unique index on (source, eventType, reference)
+// lets us short-circuit duplicate deliveries without an extra round-trip.
+export const webhookEvent = pgTable(
+  "webhook_event",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    source: text("source").notNull(), // "paystack"
+    eventType: text("event_type").notNull(),
+    reference: text("reference").notNull(),
+    payload: text("payload").notNull(), // raw body
+    processedAt: timestamp("processed_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    uniqRef: uniqueIndex("webhook_event_source_ref_uq").on(
+      t.source,
+      t.eventType,
+      t.reference,
+    ),
+  }),
+);
