@@ -81,6 +81,142 @@
   }
 }
 
+/* Hamburger trigger — hidden on desktop, shown on mobile */
+.nav-mobile-trigger {
+  display: none;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 6px;
+  margin: -6px;
+  cursor: pointer;
+  line-height: 0;
+  position: relative;
+  z-index: 101; /* sit above the drawer (z 99) and nav (z 100) */
+}
+
+.nav-mobile-trigger:hover {
+  opacity: 0.7;
+}
+
+/* When the drawer is open, the trigger sits over the indigo-deep drawer
+   background. Opt out of the nav's mix-blend-mode so the X icon renders
+   in ivory (the drawer's text color) instead of inverting against the
+   dark background. */
+.nav-mobile-trigger.open {
+  mix-blend-mode: normal;
+  color: var(--ivory);
+}
+
+.nav-mobile-trigger:hover {
+  opacity: 0.7;
+}
+
+@media (max-width: 760px) {
+  .nav-mobile-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Mobile drawer — fixed full-screen sheet, slides in from the right */
+.nav-mobile-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 99; /* below the nav bar itself (z 100) but above page content */
+  /* Solid indigo-deep; literal so there's no chance of the var resolving to
+     something semi-transparent on a particular browser. */
+  background-color: #10192E;
+  color: var(--ivory);
+  padding: 96px 6vw 48px;
+  visibility: hidden;
+  /* Slide in from the right edge. Start fully off-screen. */
+  transform: translateX(100%);
+  /* Escape the parent nav's mix-blend-mode: difference so the drawer
+     colors render exactly as authored. */
+  isolation: isolate;
+  mix-blend-mode: normal;
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s linear 0.4s;
+}
+
+.nav-mobile-menu * {
+  mix-blend-mode: normal;
+}
+
+.nav-mobile-menu.open {
+  visibility: visible;
+  transform: translateX(0);
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s linear 0s;
+}
+
+.nav-mobile-links {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Stagger link entrance when the drawer opens. Reduced-motion in globals.css
+   collapses this to instant via animation-duration: 0.01ms. */
+.nav-mobile-menu .nav-mobile-links > * {
+  opacity: 0;
+}
+
+.nav-mobile-menu.open .nav-mobile-links > * {
+  animation: navLinkIn 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes navLinkIn {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.nav-mobile-links a,
+.nav-mobile-links button {
+  font-family: var(--font-serif), serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1;
+  /* Pure ivory, opaque. A subtle dark text-shadow keeps glyphs crisp
+     against the indigo background even on subpixel renders. */
+  color: #FAF7EF;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: color 0.2s ease;
+}
+
+.nav-mobile-links a:hover,
+.nav-mobile-links button:hover {
+  color: var(--gold);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.nav-mobile-links button {
+  margin-top: 12px;
+  padding-top: 24px;
+  border-top: 1px solid color-mix(in oklch, var(--ivory) 18%, transparent);
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  opacity: 0.75;
+}
+
 /* ---------- HERO ---------- */
 .hero {
   position: relative;

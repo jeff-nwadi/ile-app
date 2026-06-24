@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn, signOut, signUp } from "@/lib/auth-client";
+import { signIn, signOut, signUp, useSession } from "@/lib/auth-client";
 import { isAdmin } from "@/lib/roles";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,13 @@ function ClientAuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/";
+
+  // Pull `refetch` off the session atom so we can force the navbar (and any
+  // other subscriber) to re-validate after sign-in / sign-up. The session
+  // atom's internal cache isn't always invalidated automatically by
+  // signIn.email / signUp.email in better-auth 1.6.20, so we trigger it
+  // explicitly to keep the UI in sync.
+  const { refetch: refetchSession } = useSession();
 
   const [mode, setMode] = useState<"in" | "up">("in");
   const [loading, setLoading] = useState(false);
@@ -46,6 +53,12 @@ function ClientAuthForm() {
       setLoading(false);
       return;
     }
+
+    // Force any useSession() subscribers (navbar, dashboard, etc.) to
+    // re-fetch the server-side session before navigation completes.
+    // router.refresh() alone is not enough — better-auth's session atom
+    // holds its own cache that only refetch() invalidates.
+    await refetchSession?.();
 
     const safeNext = next.startsWith("/admin") ? "/" : next;
     router.push(safeNext);

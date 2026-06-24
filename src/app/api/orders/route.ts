@@ -1,17 +1,27 @@
 import { db } from "@/db";
 import { menuItem, order, orderItem } from "@/db/schema";
 import { paystackInitialize } from "@/lib/paystack";
-import { getCurrentUser, requireAdmin } from "@/lib/session";
-import { inArray, desc } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/session";
+import { isAdmin } from "@/lib/roles";
+import { inArray, desc, eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-// GET /api/orders — admin only, list all orders newest first
+// GET /api/orders — admin sees all, customer sees their own
 export async function GET() {
-  await requireAdmin();
-  const all = await db.select().from(order).orderBy(desc(order.createdAt));
-  return NextResponse.json({ orders: all });
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const rows = isAdmin(user)
+    ? await db.select().from(order).orderBy(desc(order.createdAt))
+    : await db
+        .select()
+        .from(order)
+        .where(eq(order.userId, user.id))
+        .orderBy(desc(order.createdAt));
+  return NextResponse.json({ orders: rows });
 }
 
 const cartSchema = z.object({
