@@ -1,11 +1,12 @@
 import { db } from "@/db";
 import { menuItem, order, reservation } from "@/db/schema";
-import { mustAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 import { count, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  await mustAdmin();
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
 
   const today = new Date().toISOString().slice(0, 10);
 

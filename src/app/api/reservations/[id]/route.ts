@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "@/db";
 import { reservation } from "@/db/schema";
-import { mustAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 import { audit } from "@/lib/audit";
 import { safeError } from "@/lib/errors";
 import { eq } from "drizzle-orm";
@@ -16,7 +16,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await mustAdmin();
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
+  const user = gate.user;
   const { id } = await params;
 
   let body: unknown;

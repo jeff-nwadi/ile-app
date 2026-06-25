@@ -17,8 +17,10 @@ export type AdminAuth =
 
 /**
  * Server-side admin gate. Returns either the authenticated admin user, or
- * a NextResponse the caller can return directly. Use `mustAdmin()` from
- * route handlers for a one-line guard.
+ * a NextResponse the caller can return directly. Use `adminGate()` from
+ * route handlers:
+ *   const gate = await adminGate();
+ *   if (!gate.ok) return gate.response;
  */
 export async function requireAdmin(): Promise<AdminAuth> {
   const user = await getCurrentUser();
@@ -35,15 +37,4 @@ export async function requireAdmin(): Promise<AdminAuth> {
     };
   }
   return { ok: true, user };
-}
-
-/**
- * Convenience wrapper: returns the user on success, or throws a NextResponse
- * the route handler returns. Lets callers stay one-liner clean:
- *   const user = await mustAdmin();
- */
-export async function mustAdmin(): Promise<SessionUser> {
-  const r = await requireAdmin();
-  if (!r.ok) throw r.response;
-  return r.user;
 }

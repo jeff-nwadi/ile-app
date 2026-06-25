@@ -1,0 +1,13 @@
+
+> ile-app@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.43.55:3000
+- Environments: .env
+✓ Ready in 2.0s
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+✦Aj WARN Arcjet will use 127.0.0.1 when missing public IP address in development mode
+○ Compiling / ...

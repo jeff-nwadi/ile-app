@@ -3,7 +3,7 @@ import { readFile, stat } from "fs/promises";
 import { join } from "path";
 import { extname } from "path";
 import { NextRequest, NextResponse } from "next/server";
-import { mustAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 const UPLOAD_DIR = join(process.cwd(), "uploads");
 
@@ -23,7 +23,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ file: string }> },
 ) {
-  await mustAdmin();
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
   const { file } = await params;
   if (!SAFE_NAME.test(file)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

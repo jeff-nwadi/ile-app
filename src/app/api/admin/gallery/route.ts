@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { gallery } from "@/db/schema";
-import { mustAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 import { audit } from "@/lib/audit";
 import { isAllowedImageUrl } from "@/lib/cdn";
 import { safeError } from "@/lib/errors";
@@ -9,7 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 export async function GET() {
-  await mustAdmin();
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
 
   const items = await db.select().from(gallery).orderBy(asc(gallery.sortOrder));
 
@@ -26,7 +27,9 @@ const createSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const user = await mustAdmin();
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
+  const user = gate.user;
 
   let body: unknown;
   try {

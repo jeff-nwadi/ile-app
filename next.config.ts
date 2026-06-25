@@ -1,5 +1,16 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== "production";
+
+// `unsafe-eval` is required by React in development mode for stack-trace
+// reconstruction. Production builds never use eval, so it stays out there.
+const scriptSrc = [
+  "'self'",
+  "'unsafe-inline'",
+  "https://js.paystack.co",
+  ...(isDev ? ["'unsafe-eval'"] : []),
+].join(" ");
+
 const csp = [
   "default-src 'self'",
   // Image sources: same-origin + data: (small inline SVG/CSS) + Cloudinary +
@@ -8,8 +19,7 @@ const csp = [
   // Inline styles needed by Tailwind's runtime class generation. Tighten with
   // a nonce later if/when we drop dynamic inline <style>.
   "style-src 'self' 'unsafe-inline'",
-  // Scripts: self + Paystack inline (loaded via @paystack/inline-js).
-  "script-src 'self' 'unsafe-inline' https://js.paystack.co",
+  `script-src ${scriptSrc}`,
   "font-src 'self' data:",
   "connect-src 'self' https://api.paystack.co",
   "frame-src https://checkout.paystack.com",

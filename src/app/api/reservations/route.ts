@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "@/db";
 import { reservation } from "@/db/schema";
-import { getCurrentUser, mustAdmin } from "@/lib/session";
+import { getCurrentUser, requireAdmin } from "@/lib/session";
 import { protect, isDenied } from "@/lib/arcjet";
 import { safeError } from "@/lib/errors";
 import { desc } from "drizzle-orm";
@@ -55,7 +55,8 @@ export async function POST(req: NextRequest) {
 
 // GET /api/reservations — admin only, list all requests newest first
 export async function GET() {
-  await mustAdmin();
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
   const all = await db
     .select()
     .from(reservation)

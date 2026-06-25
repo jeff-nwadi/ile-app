@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { menuItem, menuCategory } from "@/db/schema";
-import { mustAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 import { audit } from "@/lib/audit";
 import { isAllowedImageUrl } from "@/lib/cdn";
 import { safeError } from "@/lib/errors";
@@ -39,7 +39,9 @@ const createSchema = z.object({
 
 // POST /api/menu — admin only, create a menu item
 export async function POST(req: NextRequest) {
-  const user = await mustAdmin();
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
+  const user = gate.user;
 
   let body: unknown;
   try {

@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { gallery } from "@/db/schema";
-import { mustAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 import { audit } from "@/lib/audit";
 import { isAllowedImageUrl } from "@/lib/cdn";
 import { safeError } from "@/lib/errors";
@@ -22,7 +22,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await mustAdmin();
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
+  const user = gate.user;
   const { id } = await params;
 
   let body: unknown;
@@ -60,7 +62,9 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await mustAdmin();
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
+  const user = gate.user;
   const { id } = await params;
 
   await db.delete(gallery).where(eq(gallery.id, id));

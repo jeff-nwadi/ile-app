@@ -50,7 +50,8 @@ const instances = {
 export type Bucket = keyof typeof instances;
 
 export async function protect(req: Request, bucket: Bucket) {
-  return instances[bucket].protect(req);
+  // Each request consumes 1 token from its bucket.
+  return instances[bucket].protect(req, { requested: 1 });
 }
 
 export function isDenied(decision: { isDenied: () => boolean }): boolean {

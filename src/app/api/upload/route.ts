@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { mkdir, writeFile, stat } from "fs/promises";
 import { join } from "path";
 import { NextRequest, NextResponse } from "next/server";
-import { mustAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 import { audit } from "@/lib/audit";
 import { protect, isDenied } from "@/lib/arcjet";
 import { safeError } from "@/lib/errors";
@@ -34,7 +34,9 @@ function detectType(buf: Buffer): keyof typeof ALLOWED_TYPES | null {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await mustAdmin();
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
+  const user = gate.user;
 
   try {
     const decision = await protect(req, "upload");
