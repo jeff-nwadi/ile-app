@@ -222,9 +222,24 @@ export function GalleryManager() {
         </div>
 
         {loading ? (
-          <p className="px-6 py-10 text-sm text-charcoal/50">
-            Loading gallery…
-          </p>
+          <div className="divide-y divide-charcoal/10">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <Skeleton className="h-24 w-24 shrink-0 rounded-lg" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-5 w-1/2" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Skeleton className="h-9 w-16" />
+                  <Skeleton className="h-9 w-9" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : items.length === 0 ? (
           <p className="px-6 py-10 text-sm text-charcoal/50">
             No gallery items yet.

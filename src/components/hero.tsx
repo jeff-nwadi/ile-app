@@ -1,5 +1,4 @@
-const HERO_IMAGE =
-  "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=2000&q=80";
+const HERO_IMAGE = "/images/landing/hero.jpg";
 
 export function Hero() {
   return (

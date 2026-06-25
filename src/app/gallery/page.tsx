@@ -8,12 +8,12 @@ import { Navbar } from "@/components/navbar";
 gsap.registerPlugin(ScrollTrigger);
 
 const images = [
-  "https://images.unsplash.com/photo-1544378730-8b5afcbce505?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1414235077428-338988691f61?auto=format&fit=crop&w=1200&q=80",
+  "/images/landing/gallery-1.jpg",
+  "/images/landing/gallery-2.jpg",
+  "/images/landing/gallery-3.jpg",
+  "/images/landing/gallery-4.jpg",
+  "/images/landing/gallery-5.jpg",
+  "/images/landing/gallery-6.jpg",
 ];
 
 export default function GalleryPage() {

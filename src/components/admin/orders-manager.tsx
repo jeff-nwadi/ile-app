@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { StatusBadge } from "./status-badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatNaira } from "@/lib/utils";
 
 type Order = {
@@ -48,7 +49,27 @@ export function OrdersManager() {
   return (
     <div className="overflow-hidden rounded-xl border border-charcoal/10 bg-white shadow-sm">
       {loading ? (
-        <p className="px-6 py-10 text-sm text-charcoal/50">Loading…</p>
+        <div className="divide-y divide-charcoal/10">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between"
+            >
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-3 w-40" />
+              </div>
+              <div className="flex flex-wrap items-center gap-4">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-9 w-28" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : list.length === 0 ? (
         <p className="px-6 py-10 text-sm text-charcoal/50">No orders yet.</p>
       ) : (

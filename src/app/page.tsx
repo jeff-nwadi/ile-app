@@ -5,7 +5,7 @@ import { LandingEffects } from "@/components/landing-effects";
 import { Navbar } from "@/components/navbar";
 import { formatNaira } from "@/lib/utils";
 import { db } from "@/db";
-import { menuItem as menuItemTable, menuCategory } from "@/db/schema";
+import { menuItem as menuItemTable, menuCategory, gallery as galleryTable } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 
 async function getMenuItems() {
@@ -27,19 +27,23 @@ interface GalleryItem {
   id: string;
   imageUrl: string;
   caption: string;
-  speed?: number;
+  speed?: string;
 }
 
 async function getGalleryItems(): Promise<GalleryItem[]> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || ""}/api/gallery`,
-    );
-    if (!res.ok) throw new Error("Failed to fetch gallery");
-    const data = await res.json();
-    return (data.items || []) as GalleryItem[];
+    const rows = await db
+      .select({
+        id: galleryTable.id,
+        imageUrl: galleryTable.imageUrl,
+        caption: galleryTable.caption,
+        speed: galleryTable.speed,
+      })
+      .from(galleryTable)
+      .orderBy(asc(galleryTable.sortOrder));
+    return rows;
   } catch (error) {
-    console.error("Gallery fetch error:", error);
+    console.error("Gallery DB error:", error);
     return [];
   }
 }
@@ -79,8 +83,7 @@ export default async function Home() {
               id="phiImg"
               className="phi-img"
               style={{
-                backgroundImage:
-                  "url('https://images.unsplash.com/photo-1576402187878-974f70c890a5?auto=format&fit=crop&w=1200&q=80')",
+                backgroundImage: "url('/images/landing/philosophy.png')",
               }}
             />
           </div>
