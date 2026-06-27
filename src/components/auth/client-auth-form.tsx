@@ -49,10 +49,6 @@ function ClientAuthForm() {
       return;
     }
 
-    // Force any useSession() subscribers (navbar, dashboard, etc.) to
-    // re-fetch the server-side session before navigation completes.
-    // router.refresh() alone is not enough — better-auth's session atom
-    // holds its own cache that only refetch() invalidates.
     await refetchSession?.();
 
     const safeNext = next.startsWith("/admin") ? "/" : next;
